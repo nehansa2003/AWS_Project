@@ -6,15 +6,37 @@ Extracted from: original notebook 'Data Preparation' and 'Final Model Selection'
 import os
 
 # Base Directories
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# DATA_DIR = os.path.join(BASE_DIR, "data")
+# MODELS_DIR = os.path.join(BASE_DIR, "models")
+# OUTPUTS_DIR = os.path.join(BASE_DIR, "outputs")
+
+# File Paths
+# Project root directory
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# Directory paths
+
 DATA_DIR = os.path.join(BASE_DIR, "data")
 MODELS_DIR = os.path.join(BASE_DIR, "models")
 OUTPUTS_DIR = os.path.join(BASE_DIR, "outputs")
 
-# File Paths
-RAW_DATA_PATH = os.path.join(DATA_DIR, "raw", "retail_customer_churn_100k (1).csv")
-PROCESSED_DATA_PATH = os.path.join(DATA_DIR, "processed", "processed_customer_churn.csv")
-MODEL_OUTPUT_PATH = os.path.join(MODELS_DIR, "best_customer_churn_model.pkl")
+# Dataset paths
+
+RAW_DATA_PATH = os.path.join(
+DATA_DIR, "raw", "retail_customer_churn_100k (1).csv"
+)
+
+PROCESSED_DATA_PATH = os.path.join(
+DATA_DIR, "processed", "processed_customer_churn.csv"
+)
+
+# Trained model path
+
+MODEL_OUTPUT_PATH = os.path.join(
+    MODELS_DIR, "best_customer_churn_model.pkl"
+)
 
 # ML Configuration
 RANDOM_STATE = 42
