@@ -1,0 +1,327 @@
+
+import os
+
+import requests
+import streamlit as st
+
+from views.overview import render as render_overview
+from views.prediction import render as render_prediction
+from views.about import render as render_about
+
+st.set_page_config(
+    page_title="ChurnIQ | Customer Intelligence",
+    page_icon="💎",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+DEFAULT_API_URL = os.getenv("CHURN_API_URL", "http://localhost:8001")
+
+
+def apply_styles():
+    st.markdown(
+        """
+        <style>
+        /* Main page */
+        .stApp {
+            background: linear-gradient(
+                135deg, #F5F3FF 0%, #EFF6FF 55%, #F0FDFA 100%
+            );
+            color: #1F2937;
+        }
+
+        [data-testid="stHeader"] {
+            background: rgba(245, 243, 255, 0.92);
+        }
+
+        [data-testid="stMain"] {
+            color: #1F2937;
+        }
+
+        /* Sidebar */
+        [data-testid="stSidebar"] {
+            background: linear-gradient(
+                180deg, #24104F 0%, #43218B 55%, #5B3CC4 100%
+            );
+        }
+
+        [data-testid="stSidebar"] * {
+            color: #FFFFFF;
+        }
+
+        [data-testid="stSidebar"] input {
+            background: #FFFFFF !important;
+            color: #202344 !important;
+            -webkit-text-fill-color: #202344 !important;
+        }
+
+        [data-testid="stSidebar"] [data-baseweb="select"] > div {
+            background: #FFFFFF !important;
+            color: #202344 !important;
+        }
+
+        [data-testid="stSidebar"] [data-baseweb="select"] * {
+            color: #202344 !important;
+        }
+
+        /* Fix white text on white backgrounds */
+        .stMarkdown, .stText, label,
+        [data-testid="stWidgetLabel"],
+        [data-testid="stMarkdownContainer"] p,
+        [data-testid="stMarkdownContainer"] li {
+            color: #25304A;
+        }
+
+        /* Input boxes */
+        input, textarea,
+        [data-baseweb="input"] input {
+            background: #FFFFFF !important;
+            color: #202344 !important;
+            -webkit-text-fill-color: #202344 !important;
+            caret-color: #6D28D9 !important;
+        }
+
+        [data-baseweb="input"],
+        [data-baseweb="select"] > div,
+        [data-baseweb="textarea"] {
+            background: #FFFFFF !important;
+            border-color: #D8DDF0 !important;
+            border-radius: 10px !important;
+        }
+
+        [data-baseweb="select"] > div {
+            color: #202344 !important;
+        }
+
+        [data-baseweb="select"] [role="combobox"],
+        [data-baseweb="select"] [role="combobox"] * {
+            color: #202344 !important;
+        }
+
+        /* Dropdown popup and options */
+        [data-baseweb="popover"],
+        [data-baseweb="menu"],
+        [role="listbox"],
+        [role="option"] {
+            background: #FFFFFF !important;
+            color: #202344 !important;
+        }
+
+        [role="option"] * {
+            color: #202344 !important;
+        }
+
+        [role="option"]:hover {
+            background: #EDE9FE !important;
+        }
+
+        /* Checkboxes and radio controls */
+        [data-testid="stCheckbox"] label,
+        [data-testid="stRadio"] label {
+            color: #25304A !important;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 30px;
+            border-radius: 23px;
+            background: linear-gradient(
+                115deg, #6D28D9, #2563EB 58%, #06B6D4
+            );
+            color: #FFFFFF;
+            margin-bottom: 25px;
+            box-shadow: 0 12px 32px rgba(79, 70, 229, .18);
+        }
+
+        .hero h1 {
+            color: #FFFFFF !important;
+            font-size: 2.25rem;
+            margin: 0 0 8px 0;
+        }
+
+        .hero p {
+            color: #F0F9FF !important;
+            margin: 0;
+            font-size: 1.03rem;
+        }
+
+        /* Cards */
+        .metric-card, .section-card {
+            padding: 22px;
+            border-radius: 18px;
+            background: #FFFFFF;
+            border: 1px solid #E0E7FF;
+            box-shadow: 0 6px 22px rgba(55, 48, 163, .07);
+            margin-bottom: 15px;
+        }
+
+        .metric-label {
+            color: #596780 !important;
+            font-size: .9rem;
+            margin-bottom: 9px;
+        }
+
+        .metric-value {
+            color: #4C1D95 !important;
+            font-size: 1.8rem;
+            font-weight: 800;
+        }
+
+        .metric-caption {
+            color: #65718A !important;
+            font-size: .8rem;
+            margin-top: 6px;
+        }
+
+        .section-card h3 {
+            color: #4C1D95 !important;
+        }
+
+        .risk-high {
+            padding: 20px;
+            border-radius: 15px;
+            background: #FFF1F2;
+            border: 1px solid #FDA4AF;
+            color: #9F1239 !important;
+        }
+
+        .risk-high h3, .risk-high p {
+            color: #9F1239 !important;
+        }
+
+        .risk-low {
+            padding: 20px;
+            border-radius: 15px;
+            background: #ECFDF5;
+            border: 1px solid #6EE7B7;
+            color: #065F46 !important;
+        }
+
+        .risk-low h3, .risk-low p {
+            color: #065F46 !important;
+        }
+
+        .eyebrow {
+            color: #6D28D9 !important;
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: 1.3px;
+        }
+
+        /* Buttons */
+        div.stButton > button[kind="primary"],
+        button[kind="primaryFormSubmit"] {
+            background: linear-gradient(100deg, #7C3AED, #2563EB);
+            color: #FFFFFF !important;
+            border: none;
+            border-radius: 11px;
+            min-height: 46px;
+            font-weight: 700;
+        }
+
+        div.stButton > button[kind="primary"] *,
+        button[kind="primaryFormSubmit"] * {
+            color: #FFFFFF !important;
+        }
+
+        div.stButton > button[kind="secondary"] {
+            background: #FFFFFF;
+            color: #4C1D95 !important;
+            border: 1px solid #C4B5FD;
+            border-radius: 10px;
+        }
+
+        /* Focus indicators */
+        input:focus, textarea:focus {
+            border-color: #7C3AED !important;
+            box-shadow: 0 0 0 2px #DDD6FE !important;
+        }
+
+        /* Alerts */
+        [data-testid="stAlert"] {
+            border-radius: 12px;
+        }
+
+        /* Footer */
+        .app-footer {
+            padding: 18px 0 5px;
+            color: #64748B !important;
+            text-align: center;
+            font-size: .8rem;
+        }
+
+        footer {
+            visibility: hidden;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+apply_styles()
+
+# ---------- Sidebar ----------
+with st.sidebar:
+    st.markdown("# 💎 ChurnIQ")
+    st.caption("CUSTOMER INTELLIGENCE PLATFORM")
+    st.divider()
+
+    page = st.radio(
+        "NAVIGATION",
+        ["📊 Overview", "🎯 Churn Prediction", "ℹ️ About"],
+        label_visibility="visible",
+        key="navigation",
+    )
+
+    st.divider()
+    st.markdown("### 🔌 API connection")
+
+    if "api_url" not in st.session_state:
+        st.session_state.api_url = DEFAULT_API_URL
+
+    api_url = st.text_input(
+        "Backend URL",
+        key="api_url",
+        help="Local Docker API: http://localhost:8001",
+    ).rstrip("/")
+
+    if st.button("Check API health", use_container_width=True):
+        try:
+            health = requests.get(f"{api_url}/health", timeout=5)
+            if health.ok:
+                st.success("API is responding")
+                st.json(health.json())
+            else:
+                st.error(f"API returned HTTP {health.status_code}")
+        except requests.RequestException as exc:
+            st.error(f"Could not connect: {exc}")
+
+    st.divider()
+    st.caption("Streamlit · FastAPI · Machine Learning")
+
+# ---------- Shared hero ----------
+st.markdown(
+    """
+    <div class="hero">
+        <h1>Customer Churn Intelligence ✨</h1>
+        <p>Understand customer risk. Make smarter retention decisions.</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+# ---------- Page routing ----------
+if page == "📊 Overview":
+    render_overview()
+
+elif page == "🎯 Churn Prediction":
+    render_prediction(api_url)
+
+else:
+    render_about()
+
+st.markdown(
+    '<div class="app-footer">ChurnIQ · Customer Intelligence · ML Demo</div>',
+    unsafe_allow_html=True,
+)
