@@ -1,0 +1,84 @@
+Training: Logistic Regression
+Training: Random Forest
+Training: Extra Trees
+Training: Gradient Boosting
+Cross-validating: Logistic Regression
+Cross-validating: Random Forest
+Cross-validating: Extra Trees
+Cross-validating: Gradient Boosting
+Best Model Selected: Logistic Regression
+{
+  "data": {
+    "rows": 100000,
+    "cols": 18,
+    "target_col": "churn_flag",
+    "missing": 0,
+    "duplicate_rows": 0,
+    "duplicate_customer_ids": 0,
+    "target_dist": {
+      "0": 53776,
+      "1": 46224
+    }
+  },
+  "cv_results": {
+    "Logistic Regression": {
+      "CV Accuracy": 0.94438,
+      "CV Precision": 0.9397693595895177,
+      "CV Recall": 0.9399229377499246,
+      "CV F1": 0.9398426184121345,
+      "CV ROC-AUC": 0.9902620185562604
+    },
+    "Random Forest": {
+      "CV Accuracy": 0.94045,
+      "CV Precision": 0.9360982874555752,
+      "CV Recall": 0.9350120136979795,
+      "CV F1": 0.9355479674322638,
+      "CV ROC-AUC": 0.988064798364325
+    },
+    "Extra Trees": {
+      "CV Accuracy": 0.93897,
+      "CV Precision": 0.9381575343815463,
+      "CV Recall": 0.9292358085194167,
+      "CV F1": 0.9336700149891252,
+      "CV ROC-AUC": 0.987971668882157
+    },
+    "Gradient Boosting": {
+      "CV Accuracy": 0.94342,
+      "CV Precision": 0.9385200230199603,
+      "CV Recall": 0.939122488701835,
+      "CV F1": 0.9388182306623364,
+      "CV ROC-AUC": 0.9896822137580239
+    }
+  },
+  "test_results": {
+    "Logistic Regression": {
+      "Accuracy": 0.9459,
+      "Precision": 0.9418642416368951,
+      "Recall": 0.9410492157923201,
+      "F1 Score": 0.9414565523211773,
+      "ROC-AUC": 0.9903792996025594
+    },
+    "Random Forest": {
+      "Accuracy": 0.94245,
+      "Precision": 0.9382716049382716,
+      "Recall": 0.9371552190373175,
+      "F1 Score": 0.9377130797121056,
+      "ROC-AUC": 0.9883155205459923
+    },
+    "Extra Trees": {
+      "Accuracy": 0.93925,
+      "Precision": 0.9386060738474984,
+      "Recall": 0.9293672255273121,
+      "F1 Score": 0.9339638023805642,
+      "ROC-AUC": 0.9882361531318901
+    },
+    "Gradient Boosting": {
+      "Accuracy": 0.945,
+      "Precision": 0.9407944582747051,
+      "Recall": 0.9401838831800974,
+      "F1 Score": 0.9404890716295174,
+      "ROC-AUC": 0.9898482122720035
+    }
+  },
+  "best_model": "Logistic Regression"
+}
