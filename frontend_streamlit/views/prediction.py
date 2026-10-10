@@ -572,9 +572,9 @@ def render(api_url):
     # DEBUGGING INFORMATION
     # =====================================================
 
-    with st.expander("View submitted customer information"):
-        st.json(customer)
+    # with st.expander("View submitted customer information"):
+    #     st.json(customer)
 
-    with st.expander("View raw API response"):
-        st.json(result)
+    # with st.expander("View raw API response"):
+    #     st.json(result)
 
