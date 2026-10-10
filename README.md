@@ -1,36 +1,32 @@
 # ChurnIQ — Customer Churn Prediction and Intelligence Application
 
 ## Project Overview
-ChurnIQ is a machine learning application designed to explore customer churn risk and predict whether customers are likely to leave based on their purchasing behavior, engagement, and other relevant attributes. The project combines a robust predictive machine learning model, a FastAPI backend for real-time predictions, and an interactive Streamlit web dashboard for customer intelligence.
+ChurnIQ is a machine learning application designed to explore customer churn risk and predict whether customers are likely to leave based on their purchasing behavior, engagement, and other relevant attributes. The project combines a robust predictive machine learning model, a FastAPI backend for real-time predictions, and an interactive, professionally-designed Streamlit web dashboard for customer intelligence.
 
 ## Key Features
-- **Machine Learning Classification**: Evaluates multiple models (Logistic Regression, Random Forest, Extra Trees, Gradient Boosting) to accurately classify churn risk.
-- **FastAPI Backend**: A RESTful API that serves the trained machine learning model and processes prediction requests in real-time.
+- **Machine Learning Classification**: Accurately classifies churn risk using a validated machine learning pipeline.
+- **FastAPI Backend**: A highly performant RESTful API that serves the trained machine learning model and securely processes prediction requests in real-time.
 - **Interactive Streamlit Dashboard**: 
-  - **Overview**: A high-level dashboard displaying customer insights.
-  - **Churn Prediction**: A dynamic interface to input customer details and instantly evaluate churn probability and risk.
-  - **About**: Detailed context about the platform and its methodologies.
+  - **Overview**: A dashboard displaying system architecture, application workflows, and feature groups.
+  - **Churn Prediction**: A dynamic, column-based interface to input 15 customer details (demographics, purchasing behavior, and engagement) to instantly evaluate churn probability.
+  - **About**: Detailed context about the platform's objectives, dataset, technologies, and responsible use limitations.
 
-## Technologies and Libraries Used
-- **Frontend**: Streamlit, Plotly
-- **Backend API**: FastAPI, Uvicorn, Pydantic, HTTPX
+## Technologies and Tools Used
+- **Frontend**: Streamlit, Plotly, Custom CSS styling
+- **Backend API**: FastAPI, Uvicorn, Pydantic
 - **Machine Learning & Data Processing**: Scikit-Learn, Pandas, NumPy, XGBoost, Joblib
 - **Data Visualization**: Matplotlib, Seaborn
 
-## Machine Learning Model and Prediction Workflow
-1. **Preprocessing**: 
-   - Numerical Features: Median Imputation followed by Standard Scaling.
-   - Categorical Features: Most Frequent Imputation followed by One-Hot Encoding.
-   - Irrelevant or leaky features (like `customer_id` and `churn_risk`) are explicitly excluded.
-2. **Model Training and Selection**: 
-   - Evaluated using Accuracy, Precision, Recall, F1 Score, and ROC-AUC with 5-fold Stratified K-Fold cross-validation.
-   - The final model selected is **Logistic Regression** based on the highest CV ROC-AUC score.
-3. **Prediction Workflow**: 
-   - The best model is serialized as a `.pkl` file and loaded by the FastAPI application.
-   - The Streamlit frontend sends customer data to the FastAPI `/predict` endpoint, which returns the predicted churn class and churn probability.
-
-## Dataset Description
-The dataset contains approximately 100,000 retail customer records. It includes 18 features detailing customer purchasing behavior and engagement. The target variable is `churn_flag` (1 for Churn, 0 for No Churn), with a distribution of 53,776 retained customers and 46,224 churned customers.
+## System Architecture and Frontend/Backend Interaction
+1. **Model Deployment**: 
+   - The best trained model (Logistic Regression) is serialized as a `.pkl` artifact.
+   - The FastAPI backend loads this model automatically upon startup.
+2. **Prediction Workflow**: 
+   - The Streamlit frontend captures user input through a polished, intuitive form.
+   - When the user clicks **Predict Customer Churn Risk**, the frontend makes a POST request sending a JSON payload to the FastAPI `/predict` endpoint.
+   - The backend validates the input using Pydantic, converts it into a Pandas DataFrame, and executes the machine learning pipeline.
+   - The API returns a JSON response containing the `predicted_churn` (0 or 1) and `churn_probability`.
+   - The frontend renders these results dynamically with interactive Plotly donut charts and colored risk alert panels.
 
 ## Project Directory Structure
 ```text
@@ -43,7 +39,7 @@ project_root/
 ├── outputs/              # Validation outputs, generated plots, and reports
 ├── src/                  # Modular Python source code (data processing, training, etc.)
 ├── tests/                # Unit tests suite
-├── requirements.txt      # Main project dependencies
+├── requirements.txt      # Main backend project dependencies
 ├── README.md             # Project documentation
 └── validation_output.json # JSON report of model evaluation metrics
 ```
@@ -52,10 +48,9 @@ project_root/
 - Python 3.8+
 - Git
 
-## Installation Instructions
+## Installation and Setup Instructions
 
 1. **Clone the repository:**
-   *(Note: Replace with your actual git clone command if your project is hosted on a remote repository)*
    ```bash
    git clone <repository-url>
    cd AWS_Project
@@ -95,7 +90,7 @@ You need to run both the FastAPI backend and the Streamlit frontend concurrently
    ```bash
    python3 -m uvicorn api.main:app --host 0.0.0.0 --port 8001 --reload
    ```
-   The API will be available at `http://localhost:8001`.
+   The API will be available at `http://localhost:8001`. The health check endpoint is at `http://localhost:8001/health`.
 
 2. **Start the Streamlit Frontend:**
    Open a new terminal window, activate your virtual environment, navigate to the frontend directory, and run the app:
@@ -108,11 +103,11 @@ You need to run both the FastAPI backend and the Streamlit frontend concurrently
 
 ## Usage Guide
 1. Open the Streamlit dashboard in your web browser.
-2. In the sidebar, ensure the **Backend URL** is pointing to your active FastAPI instance (e.g., `http://localhost:8001`) and click **Check API health** to verify the connection.
-3. Use the **Navigation** menu to switch between pages:
-   - **Overview**: Explore top-level metrics and general insights on the dataset.
-   - **Churn Prediction**: Fill out the customer attribute form and click "Predict" to receive real-time churn probability and risk analysis.
-   - **About**: Read the context, objective, and underlying technology of the ChurnIQ project.
+2. Ensure both the FastAPI backend and Streamlit frontend are running. Streamlit automatically connects to the backend API defined by the `CHURN_API_URL` environment variable.
+3. Use the **Navigation** menu in the sidebar to switch between pages:
+   - **Overview**: Explore the system architecture, workflow instructions, and feature category breakdown.
+   - **Churn Prediction**: Fill out the customer attribute form (demographics, purchasing behavior, and engagement) and click "Predict Customer Churn Risk" to receive real-time churn probability and visual risk analysis.
+   - **About**: Read the context, dataset overview, limitations, and underlying technology stack of the ChurnIQ project.
 
 ## Model Evaluation Metrics
 Based on the latest evaluation on the test set, the final **Logistic Regression** model achieved the following metrics:
@@ -122,7 +117,11 @@ Based on the latest evaluation on the test set, the final **Logistic Regression*
 - **F1 Score**: 94.15%
 - **ROC-AUC**: 99.04%
 
+## Troubleshooting
+- **API Error / Connection Refused in Streamlit**: Ensure the FastAPI server is running on the correct port (`8001`). If you are running the backend on a different port or host, set the `CHURN_API_URL` environment variable before starting Streamlit.
+- **Missing Module Errors**: Ensure you have activated your virtual environment and installed dependencies in *both* the root directory and the `frontend_streamlit/` directory.
+
 ## Limitations and Future Improvements
 - **Containerization**: Use Docker to containerize both the FastAPI backend and Streamlit frontend for seamless, uniform deployment.
-- **Cloud Deployment**: Deploy the containerized solution using AWS services (e.g., ECS, SageMaker) or other cloud providers.
+- **Cloud Deployment**: Deploy the containerized solution using cloud services.
 - **Feature Engineering**: Incorporate more granular behavioral data to further enhance prediction accuracy.
