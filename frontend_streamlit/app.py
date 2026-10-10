@@ -185,6 +185,40 @@ def apply_styles():
             margin-bottom: 8px;
         }
 
+        
+        .sidebar-info {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            padding: 12px 10px;
+            background: rgba(30, 64, 175, 0.35);
+            border: 1px solid #7DD3FC;
+            border-radius: 12px;
+        }
+
+        .sidebar-info-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .sidebar-info-icon {
+            font-size: 20px;
+            line-height: 1.3;
+        }
+
+        .sidebar-info-item strong {
+            color: #FFFFFF;
+            font-size: 13px;
+        }
+
+        .sidebar-info-item p {
+            color: #BAE6FD;
+            font-size: 11px;
+            margin: 3px 0 0 0;
+            line-height: 1.4;
+        }
+
 
         /* =========================================
            SIDEBAR SELECTS
@@ -492,7 +526,7 @@ apply_styles()
 with st.sidebar:
     st.markdown("# 💎 ChurnIQ")
     st.caption("CUSTOMER INTELLIGENCE PLATFORM")
-    st.divider()
+    # st.divider()
 
     page = st.radio(
         "NAVIGATION",
@@ -505,42 +539,72 @@ with st.sidebar:
         key="navigation",
     )
 
-    st.divider()
+    # st.divider()
 
-    st.markdown("### 🔌 API connection")
+    # st.markdown("### 🔌 API connection")
 
-    if "api_url" not in st.session_state:
-        st.session_state.api_url = DEFAULT_API_URL
+    # if "api_url" not in st.session_state:
+    #     st.session_state.api_url = DEFAULT_API_URL
 
-    api_url = st.text_input(
-        "Backend URL",
-        key="api_url",
-        help="Local Docker API: http://localhost:8001",
-    ).rstrip("/")
+    # api_url = st.text_input(
+    #     "Backend URL",
+    #     key="api_url",
+    #     help="Local Docker API: http://localhost:8001",
+    # ).rstrip("/")
 
-    if st.button(
-        "Check API health",
-        use_container_width=True,
-        type="primary",
-    ):
-        try:
-            health = requests.get(
-                f"{api_url}/health",
-                timeout=5,
-            )
+    # if st.button(
+    #     "Check API health",
+    #     use_container_width=True,
+    #     type="primary",
+    # ):
+    #     try:
+    #         health = requests.get(
+    #             f"{api_url}/health",
+    #             timeout=5,
+    #         )
 
-            if health.ok:
-                st.success("API is responding")
-                st.json(health.json())
-            else:
-                st.error(
-                    f"API returned HTTP {health.status_code}"
-                )
+    #         if health.ok:
+    #             st.success("API is responding")
+    #             st.json(health.json())
+    #         else:
+    #             st.error(
+    #                 f"API returned HTTP {health.status_code}"
+    #             )
 
-        except requests.RequestException as exc:
-            st.error(f"Could not connect: {exc}")
+    #     except requests.RequestException as exc:
+    #         st.error(f"Could not connect: {exc}")
+    
 
-    st.divider()
+
+   
+    
+    st.markdown("### ✨ Platform Overview")
+
+    with st.container(border=True):
+        # st.markdown(
+        #     """
+        #     <style>
+        #     [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+        #         border-color:  #C4B5FD !important;
+        #         border-radius: 12px !important;
+        #         background-color: white !important;
+        #     }
+        #     </style>
+        #     """,
+        #     unsafe_allow_html=True
+        # )
+
+        st.markdown("🧠 **AI-Powered Insights**")
+        st.caption("Data-driven churn analysis")
+
+        st.markdown("🎯 **Risk Identification**")
+        st.caption("Identify customers at risk")
+        
+        st.markdown("📈 **Retention Intelligence**")
+        st.caption("Support smarter decisions")
+
+
+    # st.divider()
 
     st.caption("Streamlit · FastAPI · Machine Learning")
 
@@ -566,7 +630,7 @@ st.markdown(
 # =========================================
 # PAGE ROUTING
 # =========================================
-
+api_url = DEFAULT_API_URL.rstrip("/")
 if page == "📊 Overview":
     render_overview()
 
