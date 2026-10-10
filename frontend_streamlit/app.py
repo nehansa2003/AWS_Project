@@ -1,6 +1,4 @@
-
 import os
-
 import requests
 import streamlit as st
 
@@ -8,34 +6,30 @@ from views.overview import render as render_overview
 from views.prediction import render as render_prediction
 from views.about import render as render_about
 
-
 st.set_page_config(
     page_title="ChurnIQ | Customer Intelligence",
+    page_icon="💎",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-DEFAULT_API_URL = os.getenv(
-    "CHURN_API_URL",
-    "http://localhost:8001",
-)
-
+DEFAULT_API_URL = os.getenv("CHURN_API_URL", "http://localhost:8001")
 
 def apply_styles():
     st.markdown(
         """
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+        html, body, [class*="css"] {
+            font-family: 'Inter', sans-serif;
+        }
+
         /* =========================================
            MAIN PAGE
         ========================================= */
-
         .stApp {
-            background: linear-gradient(
-                135deg,
-                #F5F3FF 0%,
-                #EFF6FF 55%,
-                #F0FDFA 100%
-            );
+            background: linear-gradient(135deg, #F5F3FF 0%, #EFF6FF 55%, #F0FDFA 100%);
             color: #1F2937;
         }
 
@@ -47,19 +41,13 @@ def apply_styles():
             color: #1F2937;
         }
 
-
         /* =========================================
            SIDEBAR BACKGROUND
         ========================================= */
-
         [data-testid="stSidebar"] {
-            background: linear-gradient(
-                180deg,
-                #24104F 0%,
-                #43218B 55%,
-                #5B3CC4 100%
-            );
+            background: linear-gradient(180deg, #24104F 0%, #43218B 55%, #5B3CC4 100%);
         }
+
         /* Sidebar collapse/expand arrow */
         [data-testid="stSidebarCollapseButton"] button,
         [data-testid="stSidebarCollapseButton"] button svg,
@@ -70,464 +58,242 @@ def apply_styles():
             stroke: white !important;
         }
 
-        /* Sidebar main title: ChurnIQ */
+        /* Sidebar text visibility fixes */
+        [data-testid="stSidebar"] * {
+            color: #FFFFFF;
+        }
+
         [data-testid="stSidebar"] h1 {
             color: #FFFFFF !important;
             font-size: 2rem !important;
             font-weight: 800 !important;
-            line-height: 1.25 !important;
         }
 
-        /* Sidebar section headings */
-        [data-testid="stSidebar"] h2 {
+        /* Navigation Radio Buttons */
+        [data-testid="stSidebar"] [role="radiogroup"] label {
+            background: transparent !important;
             color: #FFFFFF !important;
-            font-size: 1.4rem !important;
-            font-weight: 700 !important;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            margin-bottom: 0.2rem;
         }
-
-        [data-testid="stSidebar"] h3 {
+        [data-testid="stSidebar"] [role="radiogroup"] label:hover {
+            background: rgba(255, 255, 255, 0.15) !important;
+        }
+        [data-testid="stSidebar"] [role="radiogroup"] div[data-testid="stMarkdownContainer"] p {
             color: #FFFFFF !important;
-            font-size: 1.25rem !important;
-            font-weight: 700 !important;
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin: 0;
         }
-
-        /* General sidebar text */
-        [data-testid="stSidebar"] p {
-            color: #FFFFFF !important;
-            font-size: 1rem !important;
-        }
-
-        /* Sidebar captions and helper text */
-        [data-testid="stSidebar"] [data-testid="stCaptionContainer"],
-        [data-testid="stSidebar"] [data-testid="stCaptionContainer"] * {
-            color: #F3E8FF !important;
-            font-size: 0.88rem !important;
-        }
-
-        /* Sidebar widget labels */
-        [data-testid="stSidebar"] [data-testid="stWidgetLabel"],
-        [data-testid="stSidebar"] [data-testid="stWidgetLabel"] *,
-        [data-testid="stSidebar"] label {
-            color: #FFFFFF !important;
-            font-size: 1rem !important;
-            font-weight: 600 !important;
-        }
-
 
         /* =========================================
-           SIDEBAR NAVIGATION
+           MAIN DASHBOARD & TYPOGRAPHY
         ========================================= */
-
-        /* NAVIGATION heading */
-        [data-testid="stSidebar"] [data-testid="stRadio"]
-        [data-testid="stWidgetLabel"] p {
-            color: #FFFFFF !important;
-            font-size: 1.05rem !important;
-            font-weight: 800 !important;
-            letter-spacing: 0.5px !important;
-        }
-
-        /* Individual navigation options */
-        [data-testid="stSidebar"] [data-testid="stRadio"] label {
-            color: #FFFFFF !important;
-            font-size: 1.08rem !important;
-            font-weight: 600 !important;
-            line-height: 1.5 !important;
-        }
-
-        [data-testid="stSidebar"] [data-testid="stRadio"] label p,
-        [data-testid="stSidebar"] [data-testid="stRadio"] label span,
-        [data-testid="stSidebar"] [data-testid="stRadio"] label div {
-            color: #FFFFFF !important;
-            font-size: 1.08rem !important;
-        }
-
-        /* Navigation spacing */
-        [data-testid="stSidebar"] [data-testid="stRadio"] {
-            margin-top: 5px;
-            margin-bottom: 5px;
-        }
-
-
-        /* =========================================
-           BACKEND URL INPUT
-        ========================================= */
-
-        /* Keep backend URL field white with dark,
-           readable text */
-        [data-testid="stSidebar"] input {
-            background: #FFFFFF !important;
-            color: #202344 !important;
-            -webkit-text-fill-color: #202344 !important;
-            caret-color: #6D28D9 !important;
-            font-size: 1rem !important;
-            font-weight: 600 !important;
-            border-radius: 8px !important;
-        }
-
-        /* Input placeholder */
-        [data-testid="stSidebar"] input::placeholder {
-            color: #64748B !important;
-            -webkit-text-fill-color: #64748B !important;
-            opacity: 1 !important;
-        }
-
-        /* Backend URL label */
-        [data-testid="stSidebar"] [data-testid="stTextInput"]
-        [data-testid="stWidgetLabel"] {
-            color: #FFFFFF !important;
-            font-size: 1rem !important;
-            font-weight: 600 !important;
-        }
-
-        /* Backend URL help icon and related text */
-        [data-testid="stSidebar"] [data-testid="stTextInput"] {
-            margin-bottom: 8px;
-        }
-
-        
-        .sidebar-info {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            padding: 12px 10px;
-            background: rgba(30, 64, 175, 0.35);
-            border: 1px solid #7DD3FC;
-            border-radius: 12px;
-        }
-
-        .sidebar-info-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-
-        .sidebar-info-icon {
-            font-size: 20px;
-            line-height: 1.3;
-        }
-
-        .sidebar-info-item strong {
-            color: #FFFFFF;
-            font-size: 13px;
-        }
-
-        .sidebar-info-item p {
-            color: #BAE6FD;
-            font-size: 11px;
-            margin: 3px 0 0 0;
-            line-height: 1.4;
-        }
-
-
-        /* =========================================
-           SIDEBAR SELECTS
-        ========================================= */
-
-        [data-testid="stSidebar"] [data-baseweb="select"] > div {
-            background: #FFFFFF !important;
-            color: #202344 !important;
-        }
-
-        [data-testid="stSidebar"] [data-baseweb="select"] * {
-            color: #202344 !important;
-        }
-
-
-        /* =========================================
-           GENERAL MARKDOWN AND LABELS
-        ========================================= */
-
-        .stMarkdown,
-        .stText,
-        label,
-        [data-testid="stWidgetLabel"],
-        [data-testid="stMarkdownContainer"] p,
-        [data-testid="stMarkdownContainer"] li {
+        [data-testid="stMain"] h1, 
+        [data-testid="stMain"] h2, 
+        [data-testid="stMain"] h3,
+        [data-testid="stMain"] h4 {
             color: #25304A;
+            font-weight: 700;
         }
 
+        /* Hero Section */
+        .hero-container {
+            background: linear-gradient(115deg, #6D28D9, #2563EB 58%, #06B6D4);
+            padding: 2.5rem 3rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            margin-top: 1rem;
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.18);
+        }
+        .hero-container h1 {
+            color: #FFFFFF !important;
+            margin-top: 0;
+            margin-bottom: 0.5rem;
+            font-size: 2.25rem;
+            font-weight: 800;
+        }
+        .hero-container p {
+            color: #F0F9FF;
+            font-size: 1.1rem;
+            margin-bottom: 0;
+            font-weight: 400;
+        }
 
-        /* =========================================
-           MAIN PAGE INPUTS
-        ========================================= */
+        /* Dashboard Cards */
+        .dashboard-card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 6px 22px rgba(55, 48, 163, 0.07);
+            border: 1px solid #E0E7FF;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            height: 100%;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(55, 48, 163, 0.12);
+        }
+        .card-title {
+            color: #596780;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.5rem;
+        }
+        .card-value {
+            color: #4C1D95;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.25rem;
+        }
+        .card-description {
+            color: #65718A;
+            font-size: 0.875rem;
+        }
 
-        input,
-        textarea,
-        [data-baseweb="input"] input {
-            background: #FFFFFF !important;
+        /* Form Inputs */
+        [data-testid="stForm"] {
+            background-color: #FFFFFF;
+            border-radius: 16px;
+            padding: 2rem;
+            border: 1px solid #E0E7FF;
+            box-shadow: 0 6px 22px rgba(55, 48, 163, 0.05);
+        }
+        [data-testid="stMain"] input, 
+        [data-testid="stMain"] [data-baseweb="select"] {
+            border-radius: 8px;
+        }
+        [data-testid="stMain"] [data-baseweb="input"],
+        [data-testid="stMain"] [data-baseweb="select"] > div {
+            border-color: #D8DDF0 !important;
+            background-color: #FFFFFF !important;
+            transition: all 0.2s;
+        }
+        [data-testid="stMain"] [data-baseweb="input"] input,
+        [data-testid="stMain"] [data-baseweb="select"] * {
             color: #202344 !important;
             -webkit-text-fill-color: #202344 !important;
-            caret-color: #6D28D9 !important;
+        }
+        [data-testid="stMain"] [data-baseweb="input"]:focus-within,
+        [data-testid="stMain"] [data-baseweb="select"] > div:focus-within {
+            border-color: #7C3AED !important;
+            box-shadow: 0 0 0 2px #DDD6FE !important;
         }
 
-        [data-baseweb="input"],
-        [data-baseweb="select"] > div,
-        [data-baseweb="textarea"] {
-            background: #FFFFFF !important;
-            border-color: #D8DDF0 !important;
-            border-radius: 10px !important;
-        }
-
-        [data-baseweb="select"] > div {
-            color: #202344 !important;
-        }
-
-        [data-baseweb="select"] [role="combobox"],
-        [data-baseweb="select"] [role="combobox"] * {
-            color: #202344 !important;
-        }
-
-        /* Dropdown popup and options */
-        [data-baseweb="popover"],
-        [data-baseweb="menu"],
-        [role="listbox"],
-        [role="option"] {
+        /* Dropdown popups */
+        [data-baseweb="menu"], [role="listbox"], [role="option"] {
             background: #FFFFFF !important;
             color: #202344 !important;
         }
-
         [role="option"] * {
             color: #202344 !important;
         }
-
         [role="option"]:hover {
             background: #EDE9FE !important;
         }
 
-        /* Main-page checkboxes and radio controls */
-        [data-testid="stCheckbox"] label,
-        [data-testid="stRadio"] label {
-            color: #25304A !important;
-        }
-
-
-        /* =========================================
-           HERO SECTION
-        ========================================= */
-
-        .hero {
-            padding: 30px;
-            border-radius: 23px;
-            background: linear-gradient(
-                115deg,
-                #6D28D9,
-                #2563EB 58%,
-                #06B6D4
-            );
-            color: #FFFFFF;
-            margin-bottom: 25px;
-            box-shadow: 0 12px 32px rgba(79, 70, 229, .18);
-        }
-
-        .hero h1 {
-            color: #FFFFFF !important;
-            font-size: 2.25rem;
-            margin: 0 0 8px 0;
-        }
-
-        .hero p {
-            color: #F0F9FF !important;
-            margin: 0;
-            font-size: 1.03rem;
-        }
-
-
-        /* =========================================
-           CARDS
-        ========================================= */
-
-        .metric-card,
-        .section-card {
-            padding: 22px;
-            border-radius: 18px;
-            background: #FFFFFF;
-            border: 1px solid #E0E7FF;
-            box-shadow: 0 6px 22px rgba(55, 48, 163, .07);
-            margin-bottom: 15px;
-        }
-
-        .metric-label {
-            color: #596780 !important;
-            font-size: .9rem;
-            margin-bottom: 9px;
-        }
-
-        .metric-value {
-            color: #4C1D95 !important;
-            font-size: 1.8rem;
-            font-weight: 800;
-        }
-
-        .metric-caption {
-            color: #65718A !important;
-            font-size: .8rem;
-            margin-top: 6px;
-        }
-
-        .section-card h3 {
-            color: #4C1D95 !important;
-        }
-
-        .risk-high {
-            padding: 20px;
-            border-radius: 15px;
-            background: #FFF1F2;
-            border: 1px solid #FDA4AF;
-            color: #9F1239 !important;
-        }
-
-        .risk-high h3,
-        .risk-high p {
-            color: #9F1239 !important;
-        }
-
-        .risk-low {
-            padding: 20px;
-            border-radius: 15px;
-            background: #ECFDF5;
-            border: 1px solid #6EE7B7;
-            color: #065F46 !important;
-        }
-
-        .risk-low h3,
-        .risk-low p {
-            color: #065F46 !important;
-        }
-
-        .eyebrow {
-            color: #6D28D9 !important;
-            font-size: .72rem;
-            font-weight: 800;
-            letter-spacing: 1.3px;
-        }
-
-
-        /* =========================================
-           BUTTONS
-        ========================================= */
-
-        /* Primary buttons */
-        div.stButton > button[kind="primary"],
+        /* Prediction Button */
+        [data-testid="stMain"] div.stButton > button[kind="primary"],
         button[kind="primaryFormSubmit"] {
-            background: linear-gradient(
-                100deg,
-                #7C3AED,
-                #2563EB
-            ) !important;
+            background: linear-gradient(100deg, #7C3AED, #2563EB) !important;
             color: #FFFFFF !important;
-            -webkit-text-fill-color: #FFFFFF !important;
-            border: none !important;
             border-radius: 11px !important;
-            min-height: 46px;
-            font-size: 1rem !important;
+            padding: 0.75rem 1.5rem;
             font-weight: 700 !important;
+            font-size: 1.05rem !important;
+            border: none !important;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.2);
+            min-height: 46px;
         }
-
-        /* Force primary button child text to white */
-        div.stButton > button[kind="primary"] *,
+        [data-testid="stMain"] div.stButton > button[kind="primary"]:hover,
+        button[kind="primaryFormSubmit"]:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(124, 58, 237, 0.3);
+            background: linear-gradient(100deg, #6D28D9, #1D4ED8) !important;
+        }
+        [data-testid="stMain"] div.stButton > button[kind="primary"] *,
         button[kind="primaryFormSubmit"] * {
             color: #FFFFFF !important;
             -webkit-text-fill-color: #FFFFFF !important;
         }
 
-        /* Secondary buttons */
-        div.stButton > button[kind="secondary"] {
-            background: #FFFFFF !important;
+        /* Result Panels */
+        .result-high {
+            background-color: #FFF1F2;
+            border: 1px solid #FDA4AF;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .result-high h3 {
+            color: #9F1239 !important;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+        }
+        .result-high p {
+            color: #9F1239 !important;
+            margin-bottom: 0;
+            font-size: 1.1rem;
+        }
+        
+        .result-low {
+            background-color: #ECFDF5;
+            border: 1px solid #6EE7B7;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+        .result-low h3 {
+            color: #065F46 !important;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+        }
+        .result-low p {
+            color: #065F46 !important;
+            margin-bottom: 0;
+            font-size: 1.1rem;
+        }
+        
+        /* Metric Styling override */
+        [data-testid="stMetricValue"] {
             color: #4C1D95 !important;
-            -webkit-text-fill-color: #4C1D95 !important;
-            border: 1px solid #C4B5FD !important;
-            border-radius: 10px !important;
-            font-size: 1rem !important;
-            font-weight: 600 !important;
+            font-weight: 800;
         }
-
-        /* Fix the Check API health button text.
-           This also handles Streamlit versions where
-           the button kind selector differs. */
-        [data-testid="stSidebar"] div.stButton > button {
-            background: linear-gradient(
-                100deg,
-                #7C3AED,
-                #2563EB
-            ) !important;
-            color: #FFFFFF !important;
-            -webkit-text-fill-color: #FFFFFF !important;
-            border: none !important;
-            border-radius: 10px !important;
-            min-height: 46px !important;
-            font-size: 1rem !important;
-            font-weight: 700 !important;
-        }
-
-        [data-testid="stSidebar"] div.stButton > button * {
-            color: #FFFFFF !important;
-            -webkit-text-fill-color: #FFFFFF !important;
-        }
-
-        [data-testid="stSidebar"] div.stButton > button:hover {
-            background: linear-gradient(
-                100deg,
-                #6D28D9,
-                #1D4ED8
-            ) !important;
-            color: #FFFFFF !important;
-            -webkit-text-fill-color: #FFFFFF !important;
-        }
-
-
-        /* =========================================
-           FOCUS INDICATORS
-        ========================================= */
-
-        input:focus,
-        textarea:focus {
-            border-color: #7C3AED !important;
-            box-shadow: 0 0 0 2px #DDD6FE !important;
-        }
-
-
-        /* =========================================
-           ALERTS
-        ========================================= */
-
-        [data-testid="stAlert"] {
-            border-radius: 12px;
-        }
-
-
-        /* =========================================
-           FOOTER
-        ========================================= */
-
-        .app-footer {
-            padding: 18px 0 5px;
-            color: #64748B !important;
-            text-align: center;
-            font-size: .8rem;
-        }
-
-        footer {
-            visibility: hidden;
+        [data-testid="stMetricLabel"] {
+            color: #596780 !important;
+            font-weight: 600;
         }
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-
 apply_styles()
-
 
 # =========================================
 # SIDEBAR
 # =========================================
-
 with st.sidebar:
-    st.markdown("# 💎 ChurnIQ")
-    st.caption("CUSTOMER INTELLIGENCE PLATFORM")
-    # st.divider()
-
+    st.markdown("""
+        <div style="padding-bottom: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 1.5rem;">
+            <h1 style="color: white; margin-bottom: 0; font-size: 2.2rem; font-weight: 800;">💎 ChurnIQ</h1>
+            <p style="color: #F3E8FF; font-size: 0.85rem; margin-top: 0; font-weight: 600; letter-spacing: 0.05em;">CUSTOMER INTELLIGENCE</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
     page = st.radio(
         "NAVIGATION",
         [
@@ -535,121 +301,15 @@ with st.sidebar:
             "🎯 Churn Prediction",
             "ℹ️ About",
         ],
-        label_visibility="visible",
-        key="navigation",
+        label_visibility="collapsed",
     )
-
-    # st.divider()
-
-    # st.markdown("### 🔌 API connection")
-
-    # if "api_url" not in st.session_state:
-    #     st.session_state.api_url = DEFAULT_API_URL
-
-    # api_url = st.text_input(
-    #     "Backend URL",
-    #     key="api_url",
-    #     help="Local Docker API: http://localhost:8001",
-    # ).rstrip("/")
-
-    # if st.button(
-    #     "Check API health",
-    #     use_container_width=True,
-    #     type="primary",
-    # ):
-    #     try:
-    #         health = requests.get(
-    #             f"{api_url}/health",
-    #             timeout=5,
-    #         )
-
-    #         if health.ok:
-    #             st.success("API is responding")
-    #             st.json(health.json())
-    #         else:
-    #             st.error(
-    #                 f"API returned HTTP {health.status_code}"
-    #             )
-
-    #     except requests.RequestException as exc:
-    #         st.error(f"Could not connect: {exc}")
-    
-
-
-   
-    
-    st.markdown("### ✨ Platform Overview")
-
-    with st.container(border=True):
-        # st.markdown(
-        #     """
-        #     <style>
-        #     [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
-        #         border-color:  #C4B5FD !important;
-        #         border-radius: 12px !important;
-        #         background-color: white !important;
-        #     }
-        #     </style>
-        #     """,
-        #     unsafe_allow_html=True
-        # )
-
-        st.markdown("🧠 **AI-Powered Insights**")
-        st.caption("Data-driven churn analysis")
-
-        st.markdown("🎯 **Risk Identification**")
-        st.caption("Identify customers at risk")
-        
-        st.markdown("📈 **Retention Intelligence**")
-        st.caption("Support smarter decisions")
-
-
-    # st.divider()
-
-    st.caption("Streamlit · FastAPI · Machine Learning")
-
-
-# =========================================
-# SHARED HERO
-# =========================================
-
-st.markdown(
-    """
-    <div class="hero">
-        <h1>Customer Churn Intelligence ✨</h1>
-        <p>
-            Understand customer risk.
-            Make smarter retention decisions.
-        </p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
 
 # =========================================
 # PAGE ROUTING
 # =========================================
-api_url = DEFAULT_API_URL.rstrip("/")
 if page == "📊 Overview":
     render_overview()
-
 elif page == "🎯 Churn Prediction":
-    render_prediction(api_url)
-
+    render_prediction(DEFAULT_API_URL.rstrip("/"))
 else:
     render_about()
-
-
-# =========================================
-# FOOTER
-# =========================================
-
-st.markdown(
-    """
-    <div class="app-footer">
-        ChurnIQ · Customer Intelligence · ML Demo
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
