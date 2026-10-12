@@ -1,0 +1,18 @@
+{
+  "log_type": "data_validation",
+  "project": "Retail Customer Churn Prediction and Analytics",
+  "dataset": "retail_customer_churn_100k (1).csv",
+  "status": "success",
+  "validation_checks": {
+    "file_exists": true,
+    "file_format_is_csv": true,
+    "required_columns_present": true,
+    "unexpected_columns_found": false,
+    "dataset_not_empty": true,
+    "missing_values_check": true,
+    "duplicate_customer_ids_check": true
+  },
+  "expected_rows": 100000,
+  "expected_columns": 18,
+  "message": "Dataset validation completed successfully."
+}
