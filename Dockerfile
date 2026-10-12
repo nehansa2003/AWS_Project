@@ -12,7 +12,7 @@ COPY src /app/src
 COPY models /app/models
 
 # Expose API port
-EXPOSE 8000
+EXPOSE 8001
 
 # Start server
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
