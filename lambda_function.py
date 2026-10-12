@@ -1,17 +1,19 @@
-
-import boto3
-import csv
 import io
 import json
 import logging
 import urllib.parse
+import boto3
+import pandas as pd
 
-s3 = boto3.client("s3")
-
+# Configure logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-EXPECTED_COLUMNS = [
+# Initialize S3 client
+s3 = boto3.client("s3")
+
+# Expected 18 columns for the Retail Customer Churn dataset
+REQUIRED_COLUMNS = [
     "customer_id",
     "age_group",
     "gender",
@@ -29,113 +31,114 @@ EXPECTED_COLUMNS = [
     "loyalty_score",
     "engagement_score",
     "churn_risk",
-    "churn_flag"
+    "churn_flag",
 ]
 
 
 def lambda_handler(event, context):
+    """
+    AWS Lambda handler triggered by S3 ObjectCreated events.
+    Validates uploaded retail customer churn CSV datasets from the 'raw/' folder,
+    checks schema and data quality, and saves validated data to 'processed/'.
+    """
+    logger.info("Lambda function triggered for retail churn data validation.")
     results = []
 
     for record in event.get("Records", []):
         bucket = record["s3"]["bucket"]["name"]
-        key = urllib.parse.unquote_plus(
-            record["s3"]["object"]["key"]
-        )
+        
+        # AWS S3 URL-encodes object keys (spaces become '+', special chars encoded)
+        raw_key = record["s3"]["object"]["key"]
+        key = urllib.parse.unquote_plus(raw_key)
 
+        logger.info(f"New upload detected: s3://{bucket}/{key}")
+
+        # 1. Skip non-CSV files
         if not key.lower().endswith(".csv"):
-            logger.info("Skipped non-CSV file: %s", key)
+            logger.info(f"Skipping non-CSV file: {key}")
             continue
 
-        logger.info("Validating s3://%s/%s", bucket, key)
+        # 2. Prevent infinite loops: only process files within 'raw/'
+        if not key.startswith("raw/"):
+            logger.info(f"Skipping file outside 'raw/' prefix: {key}")
+            continue
+
+        # 3. Guard against processing already validated outputs
+        if "_validated.csv" in key:
+            logger.info(f"Skipping already validated file: {key}")
+            continue
 
         try:
-            response = s3.get_object(
-                Bucket=bucket,
-                Key=key
-            )
+            # 4. Fetch the file from S3
+            obj = s3.get_object(Bucket=bucket, Key=key)
+            csv_bytes = obj["Body"].read()
+            df = pd.read_csv(io.BytesIO(csv_bytes))
 
-            content = response["Body"].read().decode("utf-8-sig")
-            reader = csv.DictReader(io.StringIO(content))
+            # 5. Schema validation: check required columns
+            missing_cols = [c for c in REQUIRED_COLUMNS if c not in df.columns]
+            if missing_cols:
+                logger.error(f"Validation FAILED for {key}. Missing required columns: {missing_cols}")
+                results.append({
+                    "file": key,
+                    "status": "FAILED",
+                    "missing_columns": missing_cols
+                })
+                continue
 
-            actual_columns = reader.fieldnames or []
+            # 6. Check for unexpected additional columns (optional warning)
+            unexpected_cols = [c for c in df.columns if c not in REQUIRED_COLUMNS]
+            if unexpected_cols:
+                logger.warning(f"File {key} contains unexpected columns: {unexpected_cols}")
 
-            if not actual_columns:
-                raise ValueError("CSV has no header row.")
-
-            missing_columns = [
-                col for col in EXPECTED_COLUMNS
-                if col not in actual_columns
-            ]
-
-            unexpected_columns = [
-                col for col in actual_columns
-                if col not in EXPECTED_COLUMNS
-            ]
-
-            if missing_columns:
-                raise ValueError(
-                    f"Missing columns: {missing_columns}"
-                )
-
-            if unexpected_columns:
-                raise ValueError(
-                    f"Unexpected columns: {unexpected_columns}"
-                )
-
-            row_count = 0
-            invalid_rows = 0
-            seen_customer_ids = set()
-
-            for row in reader:
-                row_count += 1
-
-                # Check that required fields are not empty.
-                if any(
-                    not row.get(col) or not row[col].strip()
-                    for col in EXPECTED_COLUMNS
-                ):
-                    invalid_rows += 1
-
-                customer_id = row.get("customer_id", "").strip()
-
-                if customer_id in seen_customer_ids:
-                    invalid_rows += 1
-                else:
-                    seen_customer_ids.add(customer_id)
-
+            # 7. Data Quality & Summary Statistics
+            row_count = len(df)
             if row_count == 0:
-                raise ValueError("CSV contains no data rows.")
+                logger.error(f"Validation FAILED for {key}: Dataset contains 0 rows.")
+                results.append({
+                    "file": key,
+                    "status": "FAILED",
+                    "reason": "Empty dataset"
+                })
+                continue
 
-            if invalid_rows > 0:
-                status = "invalid"
-            else:
-                status = "valid"
+            null_pct = df[REQUIRED_COLUMNS].isnull().mean().round(4).to_dict()
+            duplicate_ids = int(df["customer_id"].duplicated().sum()) if "customer_id" in df.columns else 0
 
-            result = {
-                "file": key,
-                "rows": row_count,
-                "columns": len(actual_columns),
-                "invalid_rows": invalid_rows,
-                "status": status
-            }
+            logger.info(f"File {key} validated successfully: {row_count} rows, {duplicate_ids} duplicate customer IDs.")
+            logger.info(f"Null proportions: {null_pct}")
 
-            logger.info(
-                "Validation result: %s",
-                json.dumps(result)
+            # 8. Define output destination: raw/path.csv -> processed/path_validated.csv
+            out_key = key.replace("raw/", "processed/").replace(".csv", "_validated.csv")
+
+            # Write validated DataFrame to S3 processed folder
+            csv_buffer = io.StringIO()
+            df.to_csv(csv_buffer, index=False)
+
+            s3.put_object(
+                Bucket=bucket,
+                Key=out_key,
+                Body=csv_buffer.getvalue().encode("utf-8"),
+                ContentType="text/csv"
             )
-
-            results.append(result)
-
-        except Exception as error:
-            logger.exception("Validation failed for %s", key)
+            logger.info(f"Validated data successfully written to: s3://{bucket}/{out_key}")
 
             results.append({
                 "file": key,
-                "status": "error",
+                "output": out_key,
+                "status": "OK",
+                "rows": row_count,
+                "duplicate_customer_ids": duplicate_ids
+            })
+
+        except Exception as error:
+            logger.exception(f"Error validating {key}: {str(error)}")
+            results.append({
+                "file": key,
+                "status": "ERROR",
                 "message": str(error)
             })
 
     return {
         "statusCode": 200,
-        "body": json.dumps(results)
+        "results": results
     }
