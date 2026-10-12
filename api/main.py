@@ -1,9 +1,9 @@
 import logging
+from contextlib import asynccontextmanager
+
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
-from pydantic import ValidationError
-from typing import Dict, Any
 
 from api.schemas import CustomerData, PredictionResponse
 from src.predict import load_saved_model, predict_customer_churn
@@ -12,17 +12,12 @@ from src.predict import load_saved_model, predict_customer_churn
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-app = FastAPI(
-    title="Retail Customer Churn Prediction API",
-    description="API to predict retail customer churn using the validated ML model.",
-    version="1.0.0"
-)
-
 # Global model variable
 model_pipeline = None
 
-@app.on_event("startup")
-def startup_event():
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     global model_pipeline
     logger.info("API Startup: Loading ML model...")
     try:
@@ -31,6 +26,15 @@ def startup_event():
     except Exception as e:
         logger.error(f"Failed to load ML model: {e}")
         # We don't exit to allow the health check to report the failure
+    yield
+
+
+app = FastAPI(
+    title="Retail Customer Churn Prediction API",
+    description="API to predict retail customer churn using the validated ML model.",
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
 @app.get("/")
 def read_root():
